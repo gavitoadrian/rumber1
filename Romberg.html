@@ -1,0 +1,791 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Método de Romberg</title>
+
+<!-- Configuración de MathJax y zoom interactivo -->
+<script>
+window.MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']]
+    },
+    options: {
+        enableMenu: true,
+        menuOptions: {
+            settings: {
+                zoom: 'Click',
+                zscale: '200%',
+                alt: false,
+                cmd: false,
+                ctrl: false,
+                shift: false
+            }
+        }
+    },
+    startup: {
+        typeset: false
+    }
+};
+</script>
+
+<!-- MathJax -->
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<!-- Chart.js para la gráfica -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f3f5f9;
+    color: #222;
+    margin: 0;
+    line-height: 1.6;
+}
+
+header {
+    background: #183b64;
+    color: white;
+    padding: 25px 15px;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+}
+
+main {
+    max-width: 1050px;
+    margin: 25px auto;
+    padding: 0 15px;
+}
+
+section {
+    background: white;
+    padding: 22px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px #00000012;
+}
+
+h2 {
+    color: #183b64;
+    margin-top: 0;
+}
+
+.formula {
+    background: #f4f7fb;
+    padding: 12px;
+    margin: 12px 0;
+    border-left: 4px solid #3977b9;
+    overflow-x: auto;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-top: 12px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #bbb;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+button {
+    background: #2167a5;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 20px;
+    margin-top: 18px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #174b7a;
+}
+
+#mensaje {
+    margin-top: 12px;
+    font-weight: bold;
+    color: #a32626;
+}
+
+.resultado {
+    background: #edf7ed;
+    border-left: 5px solid #318344;
+    padding: 15px;
+    margin: 15px 0;
+    overflow-x: auto;
+}
+
+.tabla-contenedor {
+    overflow-x: auto;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 15px;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 9px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+th {
+    background: #e6eef8;
+}
+
+.paso {
+    border-bottom: 1px solid #ddd;
+    padding: 12px 0;
+    overflow-x: auto;
+}
+
+footer {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+}
+
+canvas {
+    max-width: 100%;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>Integración numérica: Método de Romberg</h1>
+    <p>Deducción matemática, procedimiento y calculadora</p>
+</header>
+
+<main>
+
+<section>
+    <h2>1. Introducción</h2>
+
+    El método de Romberg permite aproximar una integral definida
+    combinando la regla del trapecio con la extrapolación de Richardson.
+    Su objetivo es mejorar progresivamente la precisión del resultado.
+
+    <div class="formula">
+        \[
+        I=\int_a^b f(t)\,dt
+        \]
+    </div>
+
+    Donde \(a\) es el límite inferior, \(b\) el límite superior
+    y \(f(t)\) la función que se desea integrar.
+</section>
+
+<section>
+    <h2>2. Regla del trapecio compuesta</h2>
+
+    Dividimos el intervalo \([a,b]\) en \(n\) subintervalos iguales.
+    El ancho de cada subintervalo es:
+
+    <div class="formula">
+        \[
+        h=\frac{b-a}{n}
+        \]
+    </div>
+
+    La aproximación mediante la regla del trapecio compuesta es:
+
+    <div class="formula">
+        \[
+        T_n=h\left[
+        \frac{f(a)+f(b)}{2}
+        +\sum_{i=1}^{n-1}f(a+ih)
+        \right]
+        \]
+    </div>
+
+    En el método de Romberg se utilizan subdivisiones sucesivas,
+    duplicando el número de subintervalos.
+</section>
+
+<section>
+    <h2>3. Extrapolación de Richardson</h2>
+
+    Para mejorar la aproximación del trapecio, se combinan resultados
+    obtenidos con diferentes tamaños de paso.
+
+    <div class="formula">
+        \[
+        R_{k,0}=T_{2^k}
+        \]
+    </div>
+
+    Los demás elementos de la tabla se calculan mediante:
+
+    <div class="formula">
+        \[
+        R_{k,j}=R_{k,j-1}
+        +\frac{R_{k,j-1}-R_{k-1,j-1}}{4^j-1}
+        \]
+    </div>
+
+    Aquí \(k\) identifica el nivel de subdivisión y \(j\) el nivel
+    de extrapolación. La aproximación final se encuentra en la
+    diagonal de la tabla.
+</section>
+
+<section>
+    <h2>4. Calculadora de Romberg</h2>
+
+    <p>
+    Introduce la función usando la variable <b>t</b>.
+    Puedes usar operaciones como <code>t**3</code>,
+    <code>sin(t)</code>, <code>cos(t)</code>,
+    <code>exp(t)</code> y <code>sqrt(t)</code>.
+    </p>
+
+    <label for="funcion">Función f(t)</label>
+    <input id="funcion" type="text"
+           value="t**3+3*t**2-2*t+4">
+
+    <label for="inferior">Límite inferior (a)</label>
+    <input id="inferior" type="number" value="0" step="any">
+
+    <label for="superior">Límite superior (b)</label>
+    <input id="superior" type="number" value="3" step="any">
+
+    <label for="tolerancia">Tolerancia</label>
+    <input id="tolerancia" type="number"
+           value="0.000001" min="0" step="any">
+
+    <button id="calcular" type="button">Calcular</button>
+
+    <div id="mensaje" role="status"></div>
+    <div id="resultado"></div>
+</section>
+
+<section id="seccionPasos" hidden>
+    <h2>5. Procedimiento paso a paso</h2>
+    <div id="pasos"></div>
+</section>
+
+<section id="seccionTabla" hidden>
+    <h2>6. Tabla de Romberg</h2>
+    <p>Los valores se muestran con diez decimales.</p>
+    <div id="tabla" class="tabla-contenedor"></div>
+</section>
+
+<section id="seccionGrafica" hidden>
+    <h2>7. Gráfica de la función</h2>
+    <p>
+    La región sombreada representa el área entre la curva y el eje
+    horizontal en el intervalo de integración.
+    </p>
+    <canvas id="grafica"></canvas>
+</section>
+
+</main>
+
+<footer>
+    Método de integración numérica de Romberg
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+
+let graficaActual = null;
+
+/* Representar las fórmulas con MathJax, incluidas las dinámicas. */
+async function mostrarFormulas(contenedor) {
+    try {
+        if (!window.MathJax || !window.MathJax.startup) {
+            throw new Error("MathJax no está disponible.");
+        }
+
+        await window.MathJax.startup.promise;
+
+        window.MathJax.typesetClear([contenedor]);
+
+        await window.MathJax.typesetPromise([contenedor]);
+
+    } catch (error) {
+        console.error(error);
+        $("mensaje").textContent =
+            "No se pudieron representar las fórmulas. Comprueba tu conexión a internet.";
+    }
+}
+
+/* Convertir la expresión en una función evaluable. */
+function crearFuncion(expresion) {
+    let e = expresion.trim();
+
+    if (!e) {
+        throw new Error("Escribe una función.");
+    }
+
+    e = e.replace(/\^/g, "**");
+
+    e = e.replace(/(\d)\s*(?=t\b)/gi, "$1*");
+    e = e.replace(/(\d)\s*(?=\()/g, "$1*");
+    e = e.replace(/\bt\s*(?=\()/gi, "t*");
+    e = e.replace(/\)\s*(?=t\b|\d|\()/gi, ")*");
+
+    const nombres = [
+        "sin", "cos", "tan", "asin", "acos", "atan",
+        "sqrt", "abs", "exp", "log", "log10",
+        "floor", "ceil", "round", "sinh", "cosh", "tanh"
+    ];
+
+    nombres.forEach(nombre => {
+        const regex = new RegExp("\\b" + nombre + "\\b", "gi");
+        e = e.replace(regex, "Math." + nombre);
+    });
+
+    e = e.replace(/\bpi\b/gi, "Math.PI");
+    e = e.replace(/\be\b/g, "Math.E");
+
+    let funcion;
+
+    try {
+        funcion = new Function(
+            "t",
+            '"use strict"; return (' + e + ');'
+        );
+    } catch (error) {
+        throw new Error(
+            "La función no es válida. Revisa su escritura y sus paréntesis."
+        );
+    }
+
+    return function(t) {
+        const valor = funcion(t);
+
+        if (typeof valor !== "number" || !Number.isFinite(valor)) {
+            throw new Error(
+                "La función produjo un valor no válido en t = " + t
+            );
+        }
+
+        return valor;
+    };
+}
+
+/* Regla del trapecio compuesta. */
+function trapecio(f, a, b, n) {
+    const h = (b - a) / n;
+
+    let suma = (f(a) + f(b)) / 2;
+
+    for (let i = 1; i < n; i++) {
+        suma += f(a + i * h);
+    }
+
+    return h * suma;
+}
+
+/* Método de Romberg, hasta ocho niveles. */
+function romberg(f, a, b, tolerancia) {
+    const maxK = 7;
+    const R = [];
+    const pasos = [];
+
+    let convergio = false;
+    let errorEstimado = Infinity;
+    let nivelFinal = maxK;
+
+    for (let k = 0; k <= maxK; k++) {
+        R[k] = [];
+
+        const n = 2 ** k;
+        const h = (b - a) / n;
+
+        if (k === 0) {
+            R[k][0] = trapecio(f, a, b, n);
+        } else {
+            let sumaNuevos = 0;
+
+            for (let i = 1; i < n; i += 2) {
+                sumaNuevos += f(a + i * h);
+            }
+
+            R[k][0] = 0.5 * R[k - 1][0] + h * sumaNuevos;
+        }
+
+        pasos.push({
+            k: k,
+            n: n,
+            h: h,
+            trapecio: R[k][0]
+        });
+
+        for (let j = 1; j <= k; j++) {
+            R[k][j] = R[k][j - 1] +
+                (R[k][j - 1] - R[k - 1][j - 1]) /
+                (4 ** j - 1);
+        }
+
+        if (k > 0) {
+            errorEstimado = Math.abs(
+                R[k][k] - R[k - 1][k - 1]
+            );
+
+            if (errorEstimado <= tolerancia) {
+                convergio = true;
+                nivelFinal = k;
+                break;
+            }
+        }
+    }
+
+    return {
+        R: R,
+        pasos: pasos,
+        convergio: convergio,
+        error: errorEstimado,
+        nivelFinal: nivelFinal,
+        valor: R[nivelFinal][nivelFinal]
+    };
+}
+
+function numero(x) {
+    return Number(x).toLocaleString("es-MX", {
+        useGrouping: false,
+        maximumFractionDigits: 10
+    });
+}
+
+function numeroPreciso(x) {
+    return Number(x).toPrecision(12);
+}
+
+/* Mostrar los cálculos de cada nivel y extrapolación. */
+function mostrarPasos(f, a, b, tolerancia, datos) {
+    const contenedor = $("pasos");
+    const R = datos.R;
+    const pasos = datos.pasos;
+
+    let html = `
+    <div class="paso">
+        <h3>Paso 1. Datos del problema</h3>
+        <p>La integral que se desea aproximar es:</p>
+        <div class="formula">
+            \\[
+            I=\\int_{${numero(a)}}^{${numero(b)}} f(t)\\,dt
+            \\]
+        </div>
+        <p>La tolerancia solicitada es
+        \\(\\varepsilon=${numeroPreciso(tolerancia)}\\).</p>
+    </div>`;
+
+    html += `
+    <div class="paso">
+        <h3>Paso 2. Calcular el tamaño del intervalo</h3>
+        <div class="formula">
+            \\[
+            h_k=\\frac{b-a}{2^k}
+            \\]
+        </div>
+        <p>En cada nivel se duplica el número de subintervalos.</p>
+    </div>`;
+
+    pasos.forEach(p => {
+        html += `
+        <div class="paso">
+            <h3>Nivel k = ${p.k}</h3>
+            <p>Número de subintervalos:
+            \\(n=2^{${p.k}}=${p.n}\\).</p>
+            <p>Tamaño del paso:</p>
+            <div class="formula">
+                \\[
+                h=\\frac{${numero(b)}-(${numero(a)})}{${p.n}}
+                =${numeroPreciso(p.h)}
+                \\]
+            </div>
+            <p>Aproximación por la regla del trapecio:</p>
+            <div class="formula">
+                \\[
+                R_{${p.k},0}=T_{${p.n}}
+                =${numeroPreciso(p.trapecio)}
+                \\]
+            </div>`;
+
+        for (let j = 1; j <= p.k; j++) {
+            html += `
+            <p>Extrapolación de Richardson, columna ${j}:</p>
+            <div class="formula">
+                \\[
+                R_{${p.k},${j}}=
+                R_{${p.k},${j-1}}+
+                \\frac{R_{${p.k},${j-1}}-
+                R_{${p.k-1},${j-1}}}{4^j-1}
+                \\]
+            </div>
+            <div class="formula">
+                \\[
+                R_{${p.k},${j}}=
+                ${numeroPreciso(R[p.k][j-1])}
+                +\\frac{${numeroPreciso(
+                    R[p.k][j-1] - R[p.k-1][j-1]
+                )}}{${4 ** j}-1}
+                =${numeroPreciso(R[p.k][j])}
+                \\]
+            </div>`;
+        }
+
+        html += `</div>`;
+    });
+
+    const k = datos.nivelFinal;
+
+    html += `
+    <div class="paso">
+        <h3>Último paso. Comprobar la tolerancia</h3>
+        <div class="formula">
+            \\[
+            E=|R_{${k},${k}}-R_{${Math.max(0, k-1)},${Math.max(0, k-1)}}|
+            \\]
+        </div>
+        <div class="formula">
+            \\[
+            E=${numeroPreciso(datos.error)}
+            \\]
+        </div>
+        <p>
+        ${datos.convergio
+            ? "Se alcanzó la tolerancia solicitada."
+            : "No se alcanzó la tolerancia con los ocho niveles disponibles."}
+        </p>
+        <div class="resultado">
+            <h3>Resultado final</h3>
+            <div class="formula">
+                \\[
+                \\boxed{I\\approx R_{${k},${k}}=
+                ${numeroPreciso(datos.valor)}}
+                \\]
+            </div>
+        </div>
+    </div>`;
+
+    contenedor.innerHTML = html;
+}
+
+/* Crear la tabla triangular de Romberg. */
+function mostrarTabla(datos) {
+    const R = datos.R;
+    const nivel = datos.nivelFinal;
+
+    let html = `
+    <table>
+        <thead>
+            <tr>
+                <th>k</th>
+                <th>n = 2ᵏ</th>`;
+
+    for (let j = 0; j <= nivel; j++) {
+        html += `<th>R(k, ${j})</th>`;
+    }
+
+    html += `</tr></thead><tbody>`;
+
+    for (let k = 0; k <= nivel; k++) {
+        html += `<tr><th>${k}</th><td>${2 ** k}</td>`;
+
+        for (let j = 0; j <= nivel; j++) {
+            html += j <= k
+                ? `<td>${numeroPreciso(R[k][j])}</td>`
+                : `<td>—</td>`;
+        }
+
+        html += `</tr>`;
+    }
+
+    html += `</tbody></table>`;
+    $("tabla").innerHTML = html;
+}
+
+/* Graficar la función y sombrear el área. */
+function mostrarGrafica(f, a, b) {
+    const cantidad = 200;
+    const etiquetas = [];
+    const valores = [];
+
+    for (let i = 0; i <= cantidad; i++) {
+        const t = a + (b - a) * i / cantidad;
+        etiquetas.push(t);
+        valores.push(f(t));
+    }
+
+    if (graficaActual) {
+        graficaActual.destroy();
+    }
+
+    graficaActual = new Chart($("grafica"), {
+        type: "line",
+        data: {
+            labels: etiquetas,
+            datasets: [{
+                label: "f(t)",
+                data: valores,
+                borderColor: "#2167a5",
+                backgroundColor: "rgba(33, 103, 165, 0.2)",
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: "origin",
+                tension: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                intersect: false,
+                mode: "index"
+            },
+            scales: {
+                x: {
+                    type: "linear",
+                    title: {
+                        display: true,
+                        text: "t"
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: "f(t)"
+                    }
+                }
+            }
+        }
+    });
+}
+
+/* Acción principal de la calculadora. */
+async function calcular() {
+    $("mensaje").textContent = "";
+    $("resultado").innerHTML = "";
+    $("pasos").innerHTML = "";
+    $("tabla").innerHTML = "";
+
+    $("seccionPasos").hidden = true;
+    $("seccionTabla").hidden = true;
+    $("seccionGrafica").hidden = true;
+
+    try {
+        const expresion = $("funcion").value;
+        const a = Number($("inferior").value);
+        const b = Number($("superior").value);
+        const tolerancia = Number($("tolerancia").value);
+
+        if ($("inferior").value.trim() === "" ||
+            $("superior").value.trim() === "") {
+            throw new Error("Introduce ambos límites de integración.");
+        }
+
+        if (!Number.isFinite(a) || !Number.isFinite(b)) {
+            throw new Error("Los límites deben ser números válidos.");
+        }
+
+        if (a === b) {
+            throw new Error("Los límites deben ser distintos.");
+        }
+
+        if (!Number.isFinite(tolerancia) || tolerancia <= 0) {
+            throw new Error("La tolerancia debe ser positiva.");
+        }
+
+        const f = crearFuncion(expresion);
+
+        f(a);
+        f((a + b) / 2);
+        f(b);
+
+        const datos = romberg(f, a, b, tolerancia);
+
+        $("resultado").innerHTML = `
+            <div class="resultado">
+                <h3>Resultado de la integración</h3>
+                <p>Función: <b>f(t) = ${expresion}</b></p>
+                <p>Intervalo: [${numero(a)}, ${numero(b)}]</p>
+                <p>Integral aproximada:
+                    <b>${numeroPreciso(datos.valor)}</b>
+                </p>
+                <p>Error estimado:
+                    <b>${numeroPreciso(datos.error)}</b>
+                </p>
+                <p>Nivel utilizado: <b>${datos.nivelFinal}</b></p>
+                <p>Estado:
+                    <b>${datos.convergio
+                        ? "Tolerancia alcanzada"
+                        : "No se alcanzó la tolerancia solicitada"}</b>
+                </p>
+            </div>`;
+
+        mostrarPasos(f, a, b, tolerancia, datos);
+        mostrarTabla(datos);
+        mostrarGrafica(f, a, b);
+
+        $("seccionPasos").hidden = false;
+        $("seccionTabla").hidden = false;
+        $("seccionGrafica").hidden = false;
+
+        await mostrarFormulas($("resultado"));
+        await mostrarFormulas($("pasos"));
+
+        window.scrollTo({
+            top: $("resultado").getBoundingClientRect().top +
+                 window.scrollY - 20,
+            behavior: "smooth"
+        });
+
+    } catch (error) {
+        $("mensaje").textContent = error.message;
+        console.error(error);
+    }
+}
+
+$("calcular").addEventListener("click", calcular);
+
+/* Representar las fórmulas que ya están en el HTML. */
+window.addEventListener("load", async function() {
+    const secciones = document.querySelectorAll("main section");
+
+    for (const seccion of secciones) {
+        await mostrarFormulas(seccion);
+    }
+});
+</script>
+
+</body>
+</html>
+share=True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
